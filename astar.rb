@@ -19,7 +19,6 @@ class PriorityQueue
 end
 
 $tried = 0
-# $BFS = 0
 
 class AStarSolver
   @@allowed_moves = [[-1,0], #up
@@ -32,8 +31,9 @@ class AStarSolver
     @start = find_space("o")
     @end = find_space("*")
     @frontier = PriorityQueue.new()
-    @frontier.add(@start, heuristic(@start))
+    @frontier.add(@start, 0)
     @came_from = {@start => nil}
+    @cost_so_far = {@start => 0}
     solve
     draw_path(get_path)
     puts "Tried #{$tried} squares."
@@ -41,8 +41,6 @@ class AStarSolver
 
   def heuristic(pos)
     (@end[0]-pos[0]).abs + (@end[1]-pos[1]).abs
-    # $BFS += 1
-    # $BFS
   end
 
   def parse_file(filename)
@@ -90,9 +88,11 @@ class AStarSolver
   end
 
   def extend_frontier(pos)
+    new_cost = @cost_so_far[pos] + 1
     neighbors(pos).each do |neighbor|
-      unless (@came_from.keys.include? neighbor)
-        @frontier.add(neighbor, heuristic(neighbor))
+      if !(@cost_so_far.keys.include? neighbor) or (new_cost < @cost_so_far[neighbor])
+        @frontier.add(neighbor, new_cost + heuristic(neighbor))
+        @cost_so_far[neighbor] = new_cost
         @came_from[neighbor] = pos
       end
     end
@@ -101,7 +101,6 @@ class AStarSolver
   def neighbors(pos)
     squares = @@allowed_moves.map {|move| [move[0]+pos[0], move[1]+pos[1]]}
     squares.select do |square|
-      (!@came_from.keys.include? square) and
       ((0...@board.length).include? square[0]) and
       ((0...@board[0].length).include? square[1]) and
       (@board[square[0]][square[1]] != '#') #check last, to avoid nil
