@@ -1,3 +1,24 @@
+class PriorityQueue
+  def initialize
+    @queue = {}
+  end
+
+  def add(element, priority)
+    @queue[element] = priority
+  end
+
+  def pull
+    top = @queue.min.first
+    @queue.delete(top)
+    top
+  end
+
+  def empty?
+    @queue.empty?
+  end
+end
+
+
 class AStarSolver
   @@allowed_moves = [[-1,0], #up
                      [0, 1], #right
