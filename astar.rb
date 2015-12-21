@@ -30,6 +30,7 @@ class AStarSolver
     @board = parse_file(filename)
     @start = find_space("o")
     @end = find_space("*")
+    @pads = find_pads
     @frontier = PriorityQueue.new()
     @frontier.add(@start, 0)
     @came_from = {@start => nil}
@@ -39,8 +40,30 @@ class AStarSolver
     puts "Tried #{$tried} squares."
   end
 
-  def heuristic(pos)
-    (@end[0]-pos[0]).abs + (@end[1]-pos[1]).abs
+  def find_pads
+    pads = [find_space("@")]
+    @board.each_index do |row|
+      (0...@board[row].length).each do |col|
+        if @board[row][col] == "@" and pads.first != [row, col]
+          pads << [row, col]
+          return pads
+        end
+      end
+    end
+    []
+  end
+
+  def heuristic(pos, destination)
+    (destination[0]-pos[0]).abs + (destination[1]-pos[1]).abs
+  end
+
+  def transport_heuristic(pos)
+    b_line = heuristic(pos, @end)
+    return b_line if @pads.length == 0
+    distances = [b_line]
+    distances << heuristic(pos, @pads[0]) + heuristic(@pads[1], @end)
+    distances << heuristic(pos, @pads[1]) + heuristic(@pads[0], @end)
+    return distances.min
   end
 
   def parse_file(filename)
@@ -76,7 +99,7 @@ class AStarSolver
   def draw_path(path)
     draw_board
     path.each do |square|
-      sleep(0.05)
+      sleep(0.3)
       @board[square[0]][square[1]] = "x"
       draw_board
     end
@@ -91,7 +114,7 @@ class AStarSolver
     new_cost = @cost_so_far[pos] + 1
     neighbors(pos).each do |neighbor|
       if !(@cost_so_far.keys.include? neighbor) or (new_cost < @cost_so_far[neighbor])
-        @frontier.add(neighbor, new_cost + heuristic(neighbor))
+        @frontier.add(neighbor, new_cost + transport_heuristic(neighbor))
         @cost_so_far[neighbor] = new_cost
         @came_from[neighbor] = pos
       end
@@ -99,7 +122,8 @@ class AStarSolver
   end
 
   def neighbors(pos)
-    squares = @@allowed_moves.map {|move| [move[0]+pos[0], move[1]+pos[1]]}
+    real_pos = (pos == @pads[0] ? @pads[1] : (pos == @pads[1] ? @pads[0] : pos))
+    squares = @@allowed_moves.map {|move| [move[0]+real_pos[0], move[1]+real_pos[1]]}
     squares.select do |square|
       ((0...@board.length).include? square[0]) and
       ((0...@board[0].length).include? square[1]) and
