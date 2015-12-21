@@ -8,7 +8,7 @@ class PriorityQueue
   end
 
   def pull
-    top = @queue.min.first
+    top = @queue.min_by { |k,v| v } .first
     @queue.delete(top)
     top
   end
@@ -18,6 +18,8 @@ class PriorityQueue
   end
 end
 
+$tried = 0
+# $BFS = 0
 
 class AStarSolver
   @@allowed_moves = [[-1,0], #up
@@ -29,10 +31,18 @@ class AStarSolver
     @board = parse_file(filename)
     @start = find_space("o")
     @end = find_space("*")
-    @frontier = Queue.new() << @start
+    @frontier = PriorityQueue.new()
+    @frontier.add(@start, heuristic(@start))
     @came_from = {@start => nil}
     solve
     draw_path(get_path)
+    puts "Tried #{$tried} squares."
+  end
+
+  def heuristic(pos)
+    (@end[0]-pos[0]).abs + (@end[1]-pos[1]).abs
+    # $BFS += 1
+    # $BFS
   end
 
   def parse_file(filename)
@@ -47,9 +57,10 @@ class AStarSolver
   end
 
   def solve
-    while @frontier.length > 0
-      pos = @frontier.pop
+    until @frontier.empty?
+      pos = @frontier.pull
       break if pos == @end
+      $tried += 1
       extend_frontier(pos)
     end
   end
@@ -67,7 +78,7 @@ class AStarSolver
   def draw_path(path)
     draw_board
     path.each do |square|
-      sleep(0.3)
+      sleep(0.05)
       @board[square[0]][square[1]] = "x"
       draw_board
     end
@@ -81,7 +92,7 @@ class AStarSolver
   def extend_frontier(pos)
     neighbors(pos).each do |neighbor|
       unless (@came_from.keys.include? neighbor)
-        @frontier << neighbor
+        @frontier.add(neighbor, heuristic(neighbor))
         @came_from[neighbor] = pos
       end
     end
