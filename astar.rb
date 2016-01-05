@@ -18,13 +18,11 @@ class PriorityQueue
   end
 end
 
-$tried = 0
-
 class AStarSolver
-  @@allowed_moves = [[-1,0], #up
-                     [0, 1], #right
-                     [1, 0], #down
-                     [0,-1]] #left
+  MOVES = [[-1,0], #up
+           [0, 1], #right
+           [1, 0], #down
+           [0,-1]] #left
 
   def initialize(filename)
     @board = parse_file(filename)
@@ -37,7 +35,6 @@ class AStarSolver
     @cost_so_far = {@start => 0}
     solve
     draw_path(get_path)
-    puts "Tried #{$tried} squares."
   end
 
   def find_pads
@@ -81,7 +78,6 @@ class AStarSolver
     until @frontier.empty?
       pos = @frontier.pull
       break if pos == @end
-      $tried += 1
       extend_frontier(pos)
     end
   end
@@ -123,7 +119,8 @@ class AStarSolver
 
   def neighbors(pos)
     real_pos = (pos == @pads[0] ? @pads[1] : (pos == @pads[1] ? @pads[0] : pos))
-    squares = @@allowed_moves.map {|move| [move[0]+real_pos[0], move[1]+real_pos[1]]}
+    squares = MOVES.map {|move| [move[0]+pos[0], move[1]+pos[1]]}
+    squares << real_pos  if real_pos != pos
     squares.select do |square|
       ((0...@board.length).include? square[0]) and
       ((0...@board[0].length).include? square[1]) and
